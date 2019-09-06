@@ -1,34 +1,54 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 
 	isatty "github.com/mattn/go-isatty"
 )
 
-func usage() {
-	fmt.Fprintf(os.Stderr, "Usage:\n")
-	fmt.Fprintf(os.Stderr, "\tldaporg <filter> [<attr>...]\n")
+func init() {
+	flag.Usage = usage
 }
+
+func usage() {
+	fmt.Fprintln(os.Stderr, "Usage:")
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "\tldaporg [<options>] <filter> [<attr>...]")
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "The options are:")
+	fmt.Fprintln(os.Stderr)
+	flag.PrintDefaults()
+}
+
+var (
+	flagEdit = flag.Bool("e", false, "Edit (not view) LDAP information (not implemented)")
+	flagSort = flag.String("s", "", "Sort by that attribute")
+	// flagDN   = flag.String("b", "", "Use this Base DN (not implemented)")
+)
 
 func main() {
 	var filter, real_filter string
 	var attrs, real_attrs []string
 
-	if len(os.Args) < 2 {
+	flag.Parse()
+
+	if len(flag.Args()) < 1 {
 		usage()
 		os.Exit(1)
 	}
-	filter = os.Args[1]
+	filter = flag.Args()[0]
 	real_filter = Config["filters"][filter]
 	if real_filter == "" {
 		real_filter = filter
 	}
-	if len(os.Args) > 2 {
-		attrs = os.Args[2:]
+	if len(flag.Args()) > 1 {
+		attrs = flag.Args()[1:]
 	} else {
 		tmp := Config["default_attributes"][filter]
 		if tmp != "" {
@@ -48,6 +68,17 @@ func main() {
 	}
 
 	result := ldap_search(real_filter, real_attrs)
+
+	if (*flagSort != "") {
+		for i, name := range attrs {
+			if name == *flagSort {
+				sort.Slice(result, func(a, b int) bool { return result[a][i] < result[b][i] })
+				goto sortDone
+			}
+		}
+		log.Fatal("Cannot sort by " + *flagSort + " (unknown attribute)")
+sortDone:
+	}
 
 	var pager string
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
