@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"github.com/go-ldap/ldap"
-	"os"
 	"strings"
+
+	"github.com/go-ldap/ldap"
 )
 
 func ldap_search(filter string, attributes []string) [][]string {
@@ -37,47 +36,4 @@ func ldap_search(filter string, attributes []string) [][]string {
 		result = append(result, line)
 	}
 	return result
-}
-
-func usage() {
-	fmt.Fprintf(os.Stderr, "Usage:\n")
-	fmt.Fprintf(os.Stderr, "\tldaporg <filter> [<attr>...]\n")
-}
-
-func main() {
-	var filter, real_filter string
-	var attrs, real_attrs []string
-
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(1)
-	}
-	filter = os.Args[1]
-	real_filter = Config["filters"][filter]
-	if real_filter == "" {
-		real_filter = filter
-	}
-	if len(os.Args) > 2 {
-		attrs = os.Args[2:]
-	} else {
-		tmp := Config["default_attributes"][filter]
-		if tmp != "" {
-			attrs = strings.Split(tmp, " ")
-		} else {
-			fmt.Fprintf(os.Stderr, "Error: no default attributes for filter \"%s\"\n", filter)
-			os.Exit(1)
-		}
-	}
-	for _, name := range attrs {
-		tmp := Config["attributes"][name]
-		if tmp == "" {
-			real_attrs = append(real_attrs, name)
-		} else {
-			real_attrs = append(real_attrs, tmp)
-		}
-	}
-
-	result := ldap_search(real_filter, real_attrs)
-
-	write_orgtable(os.Stdout, attrs, result)
 }
