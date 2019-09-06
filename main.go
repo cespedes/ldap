@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	isatty "github.com/mattn/go-isatty"
 )
 
 func usage() {
@@ -48,7 +50,7 @@ func main() {
 	result := ldap_search(real_filter, real_attrs)
 
 	var pager string
-	if !isTerminal(os.Stdout.Fd()) {
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		pager = ""
 	} else if _, err := exec.LookPath("pager"); err == nil {
 		pager = "pager"
