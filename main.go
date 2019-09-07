@@ -27,6 +27,7 @@ func usage() {
 }
 
 var (
+	flagX    = flag.Bool("x", false, "Use tview instead of org-tables")
 	flagEdit = flag.Bool("e", false, "Edit (not view) LDAP information (not implemented)")
 	flagSort = flag.String("s", "", "Sort by that attribute")
 	// flagDN   = flag.String("b", "", "Use this Base DN (not implemented)")
@@ -80,6 +81,10 @@ func main() {
 sortDone:
 	}
 
+	if *flagX {
+		my_tview(attrs, result)
+		return
+	}
 	var pager string
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		pager = ""
