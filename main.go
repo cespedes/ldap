@@ -24,8 +24,7 @@ func usage() {
 }
 
 var (
-	flagX     = flag.Bool("x", false, "Use tview instead of org-tables")
-	flagEdit  = flag.Bool("e", false, "Edit (not view) LDAP information (not implemented)")
+	flagOrg   = flag.Bool("o", false, "Use org-tables instead of tview")
 	flagSort  = flag.String("s", "", "Sort by that attribute")
 	flagDebug = flag.Bool("d", false, "Show debugging info")
 	// flagDN   = flag.String("b", "", "Use this Base DN (not implemented)")
@@ -66,7 +65,7 @@ func main() {
 		}
 	}
 
-	result := ldap_search(real_filter, real_attrs)
+	attrs, result := ldap_search(real_filter, real_attrs)
 
 	if *flagDebug {
 		return
@@ -83,9 +82,9 @@ func main() {
 sortDone:
 	}
 
-	if *flagX {
-		my_tview(attrs, result)
+	if *flagOrg {
+		write_orgtable(os.Stdout, attrs, result)
 		return
 	}
-	write_orgtable(os.Stdout, attrs, result)
+	my_tview(attrs, result)
 }

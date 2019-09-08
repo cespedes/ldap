@@ -3,6 +3,7 @@ package main
 import (
 	// "github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"unicode/utf8"
 )
 
 func my_tview(columns []string, data [][]string) {
@@ -11,7 +12,7 @@ func my_tview(columns []string, data [][]string) {
 	box = box
 	table := tview.NewTable()
 	table.SetBorder(true)
-	table.SetTitle("title")
+	table.SetTitle(" LDAP ")
 	// table.SetBorders(true)
 	table.SetSeparator(tview.Borders.Vertical)
 	table.SetFixed(1, 0)
@@ -21,7 +22,11 @@ func my_tview(columns []string, data [][]string) {
 		cell.SetSelectable(false)
 		table.SetCell(0, i, cell)
 		for j:=1; j <= len(data); j++ {
-			cell := tview.NewTableCell(data[j-1][i])
+			content := data[j-1][i]
+			if utf8.RuneCountInString(content) > 20 {
+				content = content[:20] + "[green]…"
+			}
+			cell := tview.NewTableCell(content)
 			table.SetCell(j, i, cell)
 		}
 	}
