@@ -30,6 +30,12 @@ func ldap_search(filter string, attributes []string) [][]string {
 	var result [][]string
 	for _, entry := range sr.Entries {
 		var line []string
+		if *flagDebug {
+			log.Println()
+			for _, a := range entry.Attributes {
+				log.Printf("%v: %v", a.Name, a.Values)
+			}
+		}
 		for _, attr := range attributes {
 			line = append(line, strings.Join(entry.GetAttributeValues(attr), " & "))
 		}

@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"sort"
 	"strings"
-
-	isatty "github.com/mattn/go-isatty"
 )
 
 func init() {
@@ -27,9 +24,10 @@ func usage() {
 }
 
 var (
-	flagX    = flag.Bool("x", false, "Use tview instead of org-tables")
-	flagEdit = flag.Bool("e", false, "Edit (not view) LDAP information (not implemented)")
-	flagSort = flag.String("s", "", "Sort by that attribute")
+	flagX     = flag.Bool("x", false, "Use tview instead of org-tables")
+	flagEdit  = flag.Bool("e", false, "Edit (not view) LDAP information (not implemented)")
+	flagSort  = flag.String("s", "", "Sort by that attribute")
+	flagDebug = flag.Bool("d", false, "Show debugging info")
 	// flagDN   = flag.String("b", "", "Use this Base DN (not implemented)")
 )
 
@@ -70,6 +68,10 @@ func main() {
 
 	result := ldap_search(real_filter, real_attrs)
 
+	if *flagDebug {
+		return
+	}
+
 	if (*flagSort != "") {
 		for i, name := range attrs {
 			if name == *flagSort {
@@ -84,31 +86,6 @@ sortDone:
 	if *flagX {
 		my_tview(attrs, result)
 		return
-	}
-	var pager string
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		pager = ""
-	} else if _, err := exec.LookPath("pager"); err == nil {
-		pager = "pager"
-	} else if _, err := exec.LookPath("less"); err == nil {
-		pager = "less"
-	} else if _, err := exec.LookPath("more"); err == nil {
-		pager = "more"
-	} else {
-		pager = ""
-	}
-	if pager != "" {
-		cmd := exec.Command(pager)
-		output, err := cmd.StdinPipe()
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err == nil {
-			cmd.Start()
-			write_orgtable(output, attrs, result)
-			output.Close()
-			cmd.Wait()
-			return
-		}
 	}
 	write_orgtable(os.Stdout, attrs, result)
 }
