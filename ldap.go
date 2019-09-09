@@ -34,6 +34,12 @@ func ldap_search(filter string, reqAttributes []string) (attributes []string, ta
 		}
 	}
 	var seenAttrs []string
+	for _, a := range strings.Split(Config["attributes_order"]["order"], " ") {
+		if mapAttrs[a] {
+			seenAttrs = append(seenAttrs, a)
+			delete(mapAttrs, a)
+		}
+	}
 	for a, _ := range mapAttrs {
 		seenAttrs = append(seenAttrs, a)
 	}

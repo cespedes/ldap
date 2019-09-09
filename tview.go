@@ -3,7 +3,6 @@ package main
 import (
 	// "github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"unicode/utf8"
 )
 
 func my_tview(columns []string, data [][]string) {
@@ -23,8 +22,8 @@ func my_tview(columns []string, data [][]string) {
 		table.SetCell(0, i, cell)
 		for j:=1; j <= len(data); j++ {
 			content := data[j-1][i]
-			if utf8.RuneCountInString(content) > 20 {
-				content = content[:20] + "[green]…"
+			if runes := []rune(content); len(runes) > 20 {
+				content = string(runes[:20]) + "[green]…"
 			}
 			cell := tview.NewTableCell(content)
 			table.SetCell(j, i, cell)

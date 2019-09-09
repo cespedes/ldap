@@ -52,8 +52,11 @@ func main() {
 		if tmp != "" {
 			attrs = strings.Split(tmp, " ")
 		} else {
-			fmt.Fprintf(os.Stderr, "Error: no default attributes for filter \"%s\"\n", filter)
-			os.Exit(1)
+			attrs = strings.Split(Config["default_attributes"]["default"], " ")
+			if attrs == nil {
+				fmt.Fprintf(os.Stderr, "Error: no default attributes for filter \"%s\"\n", filter)
+				os.Exit(1)
+			}
 		}
 	}
 	for _, name := range attrs {
