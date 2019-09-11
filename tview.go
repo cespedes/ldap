@@ -5,10 +5,8 @@ import (
 	"github.com/rivo/tview"
 )
 
-func my_tview(columns []string, data [][]string) {
+func myTview(columns []string, data [][]string) {
 	app := tview.NewApplication()
-	box := tview.NewBox().SetBorder(true).SetTitle("Hello, world!")
-	box = box
 	table := tview.NewTable()
 	table.SetBorder(true)
 	table.SetTitle(" LDAP ")
@@ -16,11 +14,11 @@ func my_tview(columns []string, data [][]string) {
 	table.SetSeparator(tview.Borders.Vertical)
 	table.SetFixed(1, 0)
 	table.SetSelectable(true, false)
-	for i:=0; i < len(columns); i++ {
+	for i := 0; i < len(columns); i++ {
 		cell := tview.NewTableCell("[yellow]" + columns[i])
 		cell.SetSelectable(false)
 		table.SetCell(0, i, cell)
-		for j:=1; j <= len(data); j++ {
+		for j := 1; j <= len(data); j++ {
 			content := data[j-1][i]
 			if runes := []rune(content); len(runes) > 20 {
 				content = string(runes[:20]) + "[green]…"
@@ -34,4 +32,3 @@ func my_tview(columns []string, data [][]string) {
 		panic(err)
 	}
 }
-

@@ -31,8 +31,8 @@ var (
 )
 
 func main() {
-	var filter, real_filter string
-	var attrs, real_attrs []string
+	var filter, realFilter string
+	var attrs, realAttrs []string
 
 	flag.Parse()
 
@@ -41,9 +41,9 @@ func main() {
 		os.Exit(1)
 	}
 	filter = flag.Args()[0]
-	real_filter = Config["filters"][filter]
-	if real_filter == "" {
-		real_filter = filter
+	realFilter = Config["filters"][filter]
+	if realFilter == "" {
+		realFilter = filter
 	}
 	if len(flag.Args()) > 1 {
 		attrs = flag.Args()[1:]
@@ -62,19 +62,19 @@ func main() {
 	for _, name := range attrs {
 		tmp := Config["attributes"][name]
 		if tmp == "" {
-			real_attrs = append(real_attrs, name)
+			realAttrs = append(realAttrs, name)
 		} else {
-			real_attrs = append(real_attrs, tmp)
+			realAttrs = append(realAttrs, tmp)
 		}
 	}
 
-	attrs, result := ldap_search(real_filter, real_attrs)
+	attrs, result := ldapSearch(realFilter, realAttrs)
 
 	if *flagDebug {
 		return
 	}
 
-	if (*flagSort != "") {
+	if *flagSort != "" {
 		for i, name := range attrs {
 			if name == *flagSort {
 				sort.Slice(result, func(a, b int) bool { return result[a][i] < result[b][i] })
@@ -82,12 +82,12 @@ func main() {
 			}
 		}
 		log.Fatal("Cannot sort by " + *flagSort + " (unknown attribute)")
-sortDone:
+	sortDone:
 	}
 
 	if *flagOrg {
-		write_orgtable(os.Stdout, attrs, result)
+		writeOrgtable(os.Stdout, attrs, result)
 		return
 	}
-	my_tview(attrs, result)
+	myTview(attrs, result)
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/go-ldap/ldap"
 )
 
-func ldap_search(filter string, reqAttributes []string) (attributes []string, table [][]string) {
-	l, err := ldap.Dial("tcp", Config["config"]["server"] + ":" + Config["config"]["port"])
+func ldapSearch(filter string, reqAttributes []string) (attributes []string, table [][]string) {
+	l, err := ldap.Dial("tcp", Config["config"]["server"]+":"+Config["config"]["port"])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -17,8 +17,8 @@ func ldap_search(filter string, reqAttributes []string) (attributes []string, ta
 	searchRequest := ldap.NewSearchRequest(
 		Config["config"]["basedn"], // The base dn to search
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		filter, // The filter to apply
-		reqAttributes,                    // A list attributes to retrieve
+		filter,        // The filter to apply
+		reqAttributes, // A list attributes to retrieve
 		nil,
 	)
 
@@ -40,7 +40,7 @@ func ldap_search(filter string, reqAttributes []string) (attributes []string, ta
 			delete(mapAttrs, a)
 		}
 	}
-	for a, _ := range mapAttrs {
+	for a := range mapAttrs {
 		seenAttrs = append(seenAttrs, a)
 	}
 

@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 )
 
-func write_orgtable(w io.Writer, columns []string, data [][]string) {
+func writeOrgtable(w io.Writer, columns []string, data [][]string) {
 	widths := make([]int, len(columns))
 	for i, x := range columns {
 		widths[i] = utf8.RuneCountInString(x)
@@ -20,7 +20,7 @@ func write_orgtable(w io.Writer, columns []string, data [][]string) {
 		}
 	}
 	line := fmt.Sprint("|", strings.Repeat("-", widths[0]+2))
-	for i, _ := range columns[1:] {
+	for i := range columns[1:] {
 		line += "+" + strings.Repeat("-", widths[i+1]+2)
 	}
 	line += "|"
