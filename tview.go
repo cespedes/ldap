@@ -10,6 +10,7 @@ func myTview(columns []string, data [][]string) {
 	table := tview.NewTable()
 	table.SetBorder(true)
 	table.SetTitle(" LDAP ")
+	table.SetFixedColumnsWidth(true)
 	// table.SetBorders(true)
 	table.SetSeparator(tview.Borders.Vertical)
 	table.SetFixed(1, 0)
@@ -20,10 +21,8 @@ func myTview(columns []string, data [][]string) {
 		table.SetCell(0, i, cell)
 		for j := 1; j <= len(data); j++ {
 			content := data[j-1][i]
-			if runes := []rune(content); len(runes) > 20 {
-				content = string(runes[:20]) + "[green]…"
-			}
 			cell := tview.NewTableCell(content)
+			cell.SetMaxWidth(32)
 			table.SetCell(j, i, cell)
 		}
 	}
