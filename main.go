@@ -30,9 +30,17 @@ var (
 	// flagDN   = flag.String("b", "", "Use this Base DN (not implemented)")
 )
 
+var (
+	// LDAPFilter is used to restrict the LDAP query
+	LDAPFilter string
+
+	// LDAPAttrs is a list of attributes to ask in the LDAP query
+	LDAPAttrs []string
+)
+
 func main() {
-	var filter, realFilter string
-	var attrs, realAttrs []string
+	var filter string
+	var attrs []string
 
 	flag.Parse()
 
@@ -41,9 +49,9 @@ func main() {
 		os.Exit(1)
 	}
 	filter = flag.Args()[0]
-	realFilter = Config["filters"][filter]
-	if realFilter == "" {
-		realFilter = filter
+	LDAPFilter = Config["filters"][filter]
+	if LDAPFilter == "" {
+		LDAPFilter = filter
 	}
 	if len(flag.Args()) > 1 {
 		attrs = flag.Args()[1:]
@@ -62,17 +70,13 @@ func main() {
 	for _, name := range attrs {
 		tmp := Config["attributes"][name]
 		if tmp == "" {
-			realAttrs = append(realAttrs, name)
+			LDAPAttrs = append(LDAPAttrs, name)
 		} else {
-			realAttrs = append(realAttrs, tmp)
+			LDAPAttrs = append(LDAPAttrs, tmp)
 		}
 	}
 
-	attrs, result := ldapSearch(realFilter, realAttrs)
-
-	if *flagDebug {
-		return
-	}
+	attrs, result := ldapSearch(LDAPFilter, LDAPAttrs)
 
 	if *flagSort != "" {
 		for i, name := range attrs {

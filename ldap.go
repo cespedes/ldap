@@ -33,7 +33,7 @@ func ldapSearch(filter string, reqAttributes []string) (attributes []string, tab
 			mapAttrs[attr.Name] = true
 		}
 	}
-	var seenAttrs []string
+	seenAttrs := []string{"dn"} // first attribute is "dn"
 	for _, a := range strings.Split(Config["attributes_order"]["order"], " ") {
 		if mapAttrs[a] {
 			seenAttrs = append(seenAttrs, a)
@@ -47,14 +47,14 @@ func ldapSearch(filter string, reqAttributes []string) (attributes []string, tab
 	var result [][]string
 
 	for _, entry := range sr.Entries {
-		var line []string
 		if *flagDebug {
 			log.Println()
 			for _, a := range entry.Attributes {
 				log.Printf("%v: %v", a.Name, a.Values)
 			}
 		}
-		for _, attr := range seenAttrs {
+		line := []string{entry.DN} // first line is always the DN
+		for _, attr := range seenAttrs[1:] {
 			line = append(line, strings.Join(entry.GetAttributeValues(attr), " & "))
 		}
 		result = append(result, line)
