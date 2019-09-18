@@ -28,6 +28,9 @@ func tviewFillTable(table *tview.Table, columns []string, data [][]string) {
 func myTview(columns []string, data [][]string) {
 	app := tview.NewApplication()
 	table := tview.NewTable()
+	text := tview.NewTextView()
+	flex := tview.NewFlex()
+	var lastLine tview.Primitive
 	// table.SetBorder(true)
 	table.SetTitle(" LDAP ")
 	table.SetFixedColumnsWidth(true)
@@ -64,24 +67,32 @@ func myTview(columns []string, data [][]string) {
 				})
 			case '/':
 				row, _ := table.GetSelection()
-				app.Suspend(func() {
-					fmt.Printf("search: current row=%d\n", row)
-					time.Sleep(time.Second)
-				})
+				flex.RemoveItem(lastLine)
+				lastLine = tview.NewTextView()
+				lastLine.(*tview.TextView).SetText(fmt.Sprintf("searching from line %d", row))
+				flex.AddItem(lastLine, 1, 0, false)
+
+				/*
+					for i := 1; i < len(data); i++ {
+						for j := 1; j < len(columns); j++ {
+							cell := data[(row+i) % len(data)][j]
+							if strings.Contains(data[(row+i) % len(data)][j])
+						}
+					}
+				*/
 			}
 		}
 		return event
 	})
-	text := tview.NewTextView()
 	text.SetBackgroundColor(tcell.ColorBlue)
 	text.SetDynamicColors(true)
 	text.SetText(" [yellow]q:quit   e:edit   f:filter   s:sort   /:search   n:next")
-	flex := tview.NewFlex()
 	flex.SetBackgroundColor(tcell.ColorRed)
 	flex.SetDirection(tview.FlexRow)
 	flex.AddItem(table, 0, 1, true)
 	flex.AddItem(text, 1, 0, false)
-	flex.AddItem(tview.NewBox(), 1, 0, false)
+	lastLine = tview.NewBox()
+	flex.AddItem(lastLine, 1, 0, false)
 	app.SetRoot(flex, true)
 	if err := app.Run(); err != nil {
 		panic(err)
