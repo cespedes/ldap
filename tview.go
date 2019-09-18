@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -49,7 +50,7 @@ func myTview(columns []string, data [][]string) {
 				app.Suspend(func() {
 					row, _ := table.GetSelection()
 					dn := data[row-1][0]
-					cmd := exec.Command("ldapvi", "-p", "viewdn", "-b", dn)
+					cmd := exec.Command("ldapvi", "-s", "base", "-b", dn)
 					cmd.Stdout = os.Stdout
 					cmd.Stdin = os.Stdin
 					cmd.Stderr = os.Stderr
@@ -58,6 +59,14 @@ func myTview(columns []string, data [][]string) {
 						log.Printf("ldapvi: " + err.Error())
 						time.Sleep(5 * time.Second)
 					}
+					columns, data := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
+					tviewFillTable(table, columns, data)
+				})
+			case '/':
+				row, _ := table.GetSelection()
+				app.Suspend(func() {
+					fmt.Printf("search: current row=%d\n", row)
+					time.Sleep(time.Second)
 				})
 			}
 		}

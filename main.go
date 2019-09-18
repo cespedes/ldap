@@ -27,15 +27,18 @@ var (
 	flagOrg   = flag.Bool("o", false, "Use org-tables instead of tview")
 	flagSort  = flag.String("s", "", "Sort by that attribute")
 	flagDebug = flag.Bool("d", false, "Show debugging info")
-	// flagDN   = flag.String("b", "", "Use this Base DN (not implemented)")
+	flagDN    = flag.String("b", "", "Use this Base DN")
 )
 
 var (
-	// LDAPFilter is used to restrict the LDAP query
-	LDAPFilter string
+	// LdapFilter is used to restrict the LDAP query
+	LdapFilter string
 
-	// LDAPAttrs is a list of attributes to ask in the LDAP query
-	LDAPAttrs []string
+	// LdapAttrs is a list of attributes to ask in the LDAP query
+	LdapAttrs []string
+
+	// LdapDN is the Base DN in the LDAP query
+	LdapDN string
 )
 
 func main() {
@@ -44,39 +47,42 @@ func main() {
 
 	flag.Parse()
 
-	if len(flag.Args()) < 1 {
-		usage()
-		os.Exit(1)
-	}
-	filter = flag.Args()[0]
-	LDAPFilter = Config["filters"][filter]
-	if LDAPFilter == "" {
-		LDAPFilter = filter
-	}
-	if len(flag.Args()) > 1 {
+	if len(flag.Args()) >= 1 {
+		filter = flag.Args()[0]
 		attrs = flag.Args()[1:]
 	} else {
-		tmp := Config["default_attributes"][filter]
-		if tmp != "" {
-			attrs = strings.Split(tmp, " ")
-		} else {
-			attrs = strings.Split(Config["default_attributes"]["default"], " ")
-			if attrs == nil {
-				fmt.Fprintf(os.Stderr, "Error: no default attributes for filter \"%s\"\n", filter)
-				os.Exit(1)
-			}
+		filter = "(objectClass=*)"
+		attrs = []string{"*", "createTimestamp", "modifyTimestamp"}
+	}
+	LdapFilter = Config["filters"][filter]
+	if LdapFilter == "" {
+		LdapFilter = filter
+	}
+	if *flagDN != "" {
+		LdapDN = *flagDN
+	} else {
+		LdapDN = Config["config"]["basedn"]
+	}
+	tmp := Config["default_attributes"][filter]
+	if tmp != "" {
+		attrs = strings.Split(tmp, " ")
+	} else {
+		attrs = strings.Split(Config["config"]["attributes"], " ")
+		if attrs == nil {
+			fmt.Fprintf(os.Stderr, "Error: no default attributes for filter \"%s\"\n", filter)
+			os.Exit(1)
 		}
 	}
 	for _, name := range attrs {
 		tmp := Config["attributes"][name]
 		if tmp == "" {
-			LDAPAttrs = append(LDAPAttrs, name)
+			LdapAttrs = append(LdapAttrs, name)
 		} else {
-			LDAPAttrs = append(LDAPAttrs, tmp)
+			LdapAttrs = append(LdapAttrs, tmp)
 		}
 	}
 
-	attrs, result := ldapSearch(LDAPFilter, LDAPAttrs)
+	attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
 
 	if *flagSort != "" {
 		for i, name := range attrs {
