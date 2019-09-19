@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell"
@@ -12,25 +13,41 @@ import (
 )
 
 func tviewFillTable(table *tview.Table, columns []string, data [][]string) {
-	for i := 1; i < len(columns); i++ {
+	for i := 0; i < len(columns); i++ {
 		cell := tview.NewTableCell("[yellow]" + columns[i]).SetBackgroundColor(tcell.ColorBlue)
 		cell.SetSelectable(false)
-		table.SetCell(0, i-1, cell)
-		for j := 1; j <= len(data); j++ {
-			content := data[j-1][i]
+		table.SetCell(0, i, cell)
+		for j := 0; j < len(data); j++ {
+			content := data[j][i]
 			cell := tview.NewTableCell(content)
 			cell.SetMaxWidth(32)
-			table.SetCell(j, i-1, cell)
+			table.SetCell(j+1, i, cell)
 		}
 	}
 }
 
-func myTview(columns []string, data [][]string) {
+func myTview(rows []string, columns []string, data [][]string) {
 	app := tview.NewApplication()
 	table := tview.NewTable()
 	text := tview.NewTextView()
 	flex := tview.NewFlex()
 	var lastLine tview.Primitive
+	var lastSearch string
+
+	tviewSearch := func(row int, text string) bool {
+		text = strings.ToLower(text)
+		for i := 0; i < len(data); i++ {
+			for j := 0; j < len(columns); j++ {
+				cellContent := strings.ToLower(data[(row+i)%len(data)][j])
+				if strings.Contains(cellContent, text) {
+					table.Select(((row+i)%len(data))+1, 0)
+					return true
+				}
+			}
+		}
+		return false
+	}
+
 	// table.SetBorder(true)
 	table.SetTitle(" LDAP ")
 	table.SetFixedColumnsWidth(true)
@@ -52,7 +69,7 @@ func myTview(columns []string, data [][]string) {
 			case 'e':
 				app.Suspend(func() {
 					row, _ := table.GetSelection()
-					dn := data[row-1][0]
+					dn := rows[row-1]
 					cmd := exec.Command("ldapvi", "-s", "base", "-b", dn)
 					cmd.Stdout = os.Stdout
 					cmd.Stdin = os.Stdin
@@ -62,24 +79,40 @@ func myTview(columns []string, data [][]string) {
 						log.Printf("ldapvi: " + err.Error())
 						time.Sleep(5 * time.Second)
 					}
-					columns, data := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
+					rows, columns, data = ldapSearch(LdapDN, LdapFilter, LdapAttrs)
 					tviewFillTable(table, columns, data)
 				})
 			case '/':
 				row, _ := table.GetSelection()
-				flex.RemoveItem(lastLine)
-				lastLine = tview.NewTextView()
-				lastLine.(*tview.TextView).SetText(fmt.Sprintf("searching from line %d", row))
-				flex.AddItem(lastLine, 1, 0, false)
-
-				/*
-					for i := 1; i < len(data); i++ {
-						for j := 1; j < len(columns); j++ {
-							cell := data[(row+i) % len(data)][j]
-							if strings.Contains(data[(row+i) % len(data)][j])
-						}
+				row--
+				search := tview.NewInputField()
+				search.SetLabel("Search: ")
+				search.SetFieldBackgroundColor((tcell.ColorBlack))
+				search.SetChangedFunc(func(text string) {
+					if tviewSearch(row, text) {
+						search.SetFieldTextColor(tcell.ColorWhite)
+					} else {
+						search.SetFieldTextColor((tcell.ColorRed))
 					}
-				*/
+				})
+				search.SetDoneFunc(func(key tcell.Key) {
+					lastSearch = search.GetText()
+					flex.RemoveItem(lastLine)
+					lastLine = tview.NewTextView().SetText(fmt.Sprintf("Last search: %q from line %d", lastSearch, row))
+					flex.AddItem(lastLine, 1, 0, false)
+					app.SetFocus(table)
+				})
+				flex.RemoveItem(lastLine)
+				lastLine = search
+				flex.AddItem(lastLine, 1, 0, false)
+				app.SetFocus(search)
+
+			case 'n':
+				row, _ := table.GetSelection()
+				tviewSearch(row, lastSearch)
+				flex.RemoveItem(lastLine)
+				lastLine = tview.NewTextView().SetText(fmt.Sprintf("Searching again: %q from line %d", lastSearch, row))
+				flex.AddItem(lastLine, 1, 0, false)
 			}
 		}
 		return event

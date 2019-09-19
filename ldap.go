@@ -7,7 +7,7 @@ import (
 	"github.com/go-ldap/ldap"
 )
 
-func ldapSearch(baseDN string, filter string, reqAttributes []string) (attributes []string, table [][]string) {
+func ldapSearch(baseDN string, filter string, reqAttributes []string) (rows []string, attributes []string, table [][]string) {
 	l, err := ldap.DialURL(Config["config"]["server"])
 	if err != nil {
 		log.Fatal(err)
@@ -32,15 +32,14 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (attribute
 			mapAttrs[attr.Name] = true
 		}
 	}
-	seenAttrs := []string{"dn"} // first attribute is "dn"
 	for _, a := range strings.Split(Config["attributes_order"]["order"], " ") {
 		if mapAttrs[a] {
-			seenAttrs = append(seenAttrs, a)
+			attributes = append(attributes, a)
 			delete(mapAttrs, a)
 		}
 	}
 	for a := range mapAttrs {
-		seenAttrs = append(seenAttrs, a)
+		attributes = append(attributes, a)
 	}
 
 	var result [][]string
@@ -52,11 +51,12 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (attribute
 				log.Printf("%v: %v", a.Name, a.Values)
 			}
 		}
-		line := []string{entry.DN} // first line is always the DN
-		for _, attr := range seenAttrs[1:] {
+		rows = append(rows, entry.DN)
+		var line []string
+		for _, attr := range attributes {
 			line = append(line, strings.Join(entry.GetAttributeValues(attr), " & "))
 		}
 		result = append(result, line)
 	}
-	return seenAttrs, result
+	return rows, attributes, result
 }

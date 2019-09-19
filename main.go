@@ -82,7 +82,7 @@ func main() {
 		}
 	}
 
-	attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
+	rows, attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
 
 	if *flagSort != "" {
 		for i, name := range attrs {
@@ -99,5 +99,8 @@ func main() {
 		writeOrgtable(os.Stdout, attrs, result)
 		return
 	}
-	myTview(attrs, result)
+	fmt.Println("len(rows) = ", len(rows))
+	fmt.Println("len(attrs) = ", len(attrs))
+	fmt.Println("len(result) = ", len(result))
+	myTview(rows, attrs, result)
 }
