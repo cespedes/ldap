@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 )
 
 func init() {
@@ -16,7 +15,7 @@ func init() {
 func usage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "\tldaporg [<options>] <filter> [<attr>...]")
+	fmt.Fprintln(os.Stderr, "\tldap [<options>] <filter> [<attr>...]")
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "The options are:")
 	fmt.Fprintln(os.Stderr)
@@ -24,63 +23,74 @@ func usage() {
 }
 
 var (
-	flagOrg   = flag.Bool("o", false, "Use org-tables instead of tview")
-	flagSort  = flag.String("s", "", "Sort by that attribute")
-	flagDebug = flag.Bool("d", false, "Show debugging info")
-	flagDN    = flag.String("b", "", "Use this Base DN")
+	flagOrg  = flag.Bool("o", false, "Use org-tables instead of tview")
+	flagSort = flag.String("s", "", "Sort by that attribute")
+	flagDN   = flag.String("b", "", "Use this Base DN")
 )
 
 var (
-	// LdapFilter is used to restrict the LDAP query
-	LdapFilter string
-
-	// LdapAttrs is a list of attributes to ask in the LDAP query
-	LdapAttrs []string
+	// LdapServer is the URL of the LDAP server to connect to
+	LdapServer string
 
 	// LdapDN is the Base DN in the LDAP query
 	LdapDN string
+
+	// LdapFilter is used to restrict the LDAP query
+	LdapFilter string = "(cn=*)"
+
+	// LdapAttrs is a list of attributes to ask in the LDAP query
+	LdapAttrs []string = []string{"*", "createTimestamp", "modifyTimestamp", "structuralObjectClass"}
+
+	// AttributesOrder is a list of possible attributes to display
+	AttributesOrder []string
+
+	// UserFilters is a definition of some filters using a short name
+	UserFilters = make(map[string]string)
+
+	// Alias is a map of friendly names to LDAP attributes
+	Alias = make(map[string]string)
+
+	// ReverseAlias is a map of LDAP attributes to friendly names
+	ReverseAlias = make(map[string]string)
 )
 
 func main() {
-	var filter string
 	var attrs []string
 
 	flag.Parse()
 
 	if len(flag.Args()) >= 1 {
-		filter = flag.Args()[0]
-		attrs = flag.Args()[1:]
-	} else {
-		filter = "(objectClass=*)"
-		attrs = []string{"*", "createTimestamp", "modifyTimestamp"}
+		LdapFilter = flag.Args()[0]
 	}
-	LdapFilter = Config["filters"][filter]
-	if LdapFilter == "" {
-		LdapFilter = filter
+	if len(flag.Args()) > 1 {
+		LdapAttrs = flag.Args()[1:]
+	}
+	if UserFilters[LdapFilter] != "" {
+		LdapFilter = UserFilters[LdapFilter]
 	}
 	if *flagDN != "" {
 		LdapDN = *flagDN
-	} else {
-		LdapDN = Config["config"]["basedn"]
 	}
-	tmp := Config["default_attributes"][filter]
-	if tmp != "" {
-		attrs = strings.Split(tmp, " ")
-	} else {
-		attrs = strings.Split(Config["config"]["attributes"], " ")
-		if attrs == nil {
-			fmt.Fprintf(os.Stderr, "Error: no default attributes for filter \"%s\"\n", filter)
-			os.Exit(1)
-		}
-	}
-	for _, name := range attrs {
-		tmp := Config["attributes"][name]
-		if tmp == "" {
-			LdapAttrs = append(LdapAttrs, name)
+	/*
+		tmp := Config["default_attributes"][filter]
+		if tmp != "" {
+			attrs = strings.Split(tmp, " ")
 		} else {
-			LdapAttrs = append(LdapAttrs, tmp)
+			attrs = strings.Split(Config["config"]["attributes"], " ")
+			if attrs == nil {
+				fmt.Fprintf(os.Stderr, "Error: no default attributes for filter \"%s\"\n", filter)
+				os.Exit(1)
+			}
 		}
-	}
+		for _, name := range attrs {
+			tmp := Config["attributes"][name]
+			if tmp == "" {
+				LdapAttrs = append(LdapAttrs, name)
+			} else {
+				LdapAttrs = append(LdapAttrs, tmp)
+			}
+		}
+	*/
 
 	rows, attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
 

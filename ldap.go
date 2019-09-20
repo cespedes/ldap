@@ -8,7 +8,7 @@ import (
 )
 
 func ldapSearch(baseDN string, filter string, reqAttributes []string) (rows []string, attributes []string, table [][]string) {
-	l, err := ldap.DialURL(Config["config"]["server"])
+	l, err := ldap.DialURL(LdapServer)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (rows []st
 			mapAttrs[attr.Name] = true
 		}
 	}
-	for _, a := range strings.Split(Config["attributes_order"]["order"], " ") {
+	for _, a := range AttributesOrder {
 		if mapAttrs[a] {
 			attributes = append(attributes, a)
 			delete(mapAttrs, a)
@@ -45,12 +45,6 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (rows []st
 	var result [][]string
 
 	for _, entry := range sr.Entries {
-		if *flagDebug {
-			log.Println()
-			for _, a := range entry.Attributes {
-				log.Printf("%v: %v", a.Name, a.Values)
-			}
-		}
 		rows = append(rows, entry.DN)
 		var line []string
 		for _, attr := range attributes {
@@ -58,5 +52,11 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (rows []st
 		}
 		result = append(result, line)
 	}
+	for i, a := range attributes {
+		if ReverseAlias[a] != "" {
+			attributes[i] = ReverseAlias[a]
+		}
+	}
+
 	return rows, attributes, result
 }

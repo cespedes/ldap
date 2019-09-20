@@ -119,7 +119,7 @@ func myTview(rows []string, columns []string, data [][]string) {
 	})
 	text.SetBackgroundColor(tcell.ColorBlue)
 	text.SetDynamicColors(true)
-	text.SetText(" [yellow]q:quit   e:edit   f:filter   s:sort   /:search   n:next")
+	text.SetText(" [yellow]q:quit   e:edit" /* + "   f:filter   s:sort" */ + "   /:search   n:next")
 	flex.SetBackgroundColor(tcell.ColorRed)
 	flex.SetDirection(tview.FlexRow)
 	flex.AddItem(table, 0, 1, true)
