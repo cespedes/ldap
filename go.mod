@@ -1,4 +1,4 @@
-module github.com/cespedes/ldaporg
+module github.com/cespedes/ldap
 
 require (
 	github.com/gdamore/tcell v1.2.0
