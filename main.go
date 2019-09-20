@@ -109,8 +109,5 @@ func main() {
 		writeOrgtable(os.Stdout, attrs, result)
 		return
 	}
-	fmt.Println("len(rows) = ", len(rows))
-	fmt.Println("len(attrs) = ", len(attrs))
-	fmt.Println("len(result) = ", len(result))
 	myTview(rows, attrs, result)
 }

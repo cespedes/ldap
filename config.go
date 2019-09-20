@@ -51,6 +51,4 @@ func init() {
 	for k, v := range Alias {
 		ReverseAlias[v] = k
 	}
-	fmt.Println("Alias =", Alias)
-	fmt.Println("ReverseAlias =", ReverseAlias)
 }
