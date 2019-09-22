@@ -7,7 +7,7 @@ import (
 	"github.com/go-ldap/ldap"
 )
 
-func ldapSearch(baseDN string, filter string, reqAttributes []string) (rows []string, attributes []string, table [][]string) {
+func ldapSearch(baseDN string, filter string, reqAttributes []string) (dnList []string, attributes []string, table [][]string) {
 	l, err := ldap.DialURL(LdapServer)
 	if err != nil {
 		log.Fatal(err)
@@ -45,7 +45,7 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (rows []st
 	var result [][]string
 
 	for _, entry := range sr.Entries {
-		rows = append(rows, entry.DN)
+		dnList = append(dnList, entry.DN)
 		var line []string
 		for _, attr := range attributes {
 			line = append(line, strings.Join(entry.GetAttributeValues(attr), " & "))
@@ -58,5 +58,5 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (rows []st
 		}
 	}
 
-	return rows, attributes, result
+	return dnList, attributes, result
 }

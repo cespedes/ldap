@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
+	"time"
+
+	"github.com/cespedes/tableview"
 )
 
 func init() {
@@ -92,7 +96,7 @@ func main() {
 		}
 	*/
 
-	rows, attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
+	dnList, attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
 
 	if *flagSort != "" {
 		for i, name := range attrs {
@@ -109,5 +113,23 @@ func main() {
 		writeOrgtable(os.Stdout, attrs, result)
 		return
 	}
-	myTview(rows, attrs, result)
+	t := tableview.NewTableView()
+	t.FillTable(attrs, result)
+	t.NewCommand('e', "ecit", func(row int) {
+		dn := dnList[row-1]
+		cmd := exec.Command("ldapvi", "-s", "base", "-b", dn)
+		cmd.Stdout = os.Stdout
+		cmd.Stdin = os.Stdin
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			log.Printf("ldapvi: " + err.Error())
+			time.Sleep(5 * time.Second)
+		}
+		var columns []string
+		var data [][]string
+		dnList, columns, data = ldapSearch(LdapDN, LdapFilter, LdapAttrs)
+		t.FillTable(columns, data)
+	})
+	t.Run()
 }
