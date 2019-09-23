@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"sort"
 	"time"
 
 	"github.com/cespedes/tableview"
@@ -75,47 +74,30 @@ func main() {
 	if *flagDN != "" {
 		LdapDN = *flagDN
 	}
+
+	dnList, attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs, *flagSort)
+
 	/*
-		tmp := Config["default_attributes"][filter]
-		if tmp != "" {
-			attrs = strings.Split(tmp, " ")
-		} else {
-			attrs = strings.Split(Config["config"]["attributes"], " ")
-			if attrs == nil {
-				fmt.Fprintf(os.Stderr, "Error: no default attributes for filter \"%s\"\n", filter)
-				os.Exit(1)
+		if *flagSort != "" {
+			for i, name := range attrs {
+				if name == *flagSort {
+					sort.Slice(result, func(a, b int) bool { return result[a][i] < result[b][i] })
+					goto sortDone
+				}
 			}
-		}
-		for _, name := range attrs {
-			tmp := Config["attributes"][name]
-			if tmp == "" {
-				LdapAttrs = append(LdapAttrs, name)
-			} else {
-				LdapAttrs = append(LdapAttrs, tmp)
-			}
+			log.Fatal("Cannot sort by " + *flagSort + " (unknown attribute)")
+		sortDone:
 		}
 	*/
-
-	dnList, attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs)
-
-	if *flagSort != "" {
-		for i, name := range attrs {
-			if name == *flagSort {
-				sort.Slice(result, func(a, b int) bool { return result[a][i] < result[b][i] })
-				goto sortDone
-			}
-		}
-		log.Fatal("Cannot sort by " + *flagSort + " (unknown attribute)")
-	sortDone:
-	}
 
 	if *flagOrg {
 		writeOrgtable(os.Stdout, attrs, result)
 		return
 	}
+
 	t := tableview.NewTableView()
 	t.FillTable(attrs, result)
-	t.NewCommand('e', "ecit", func(row int) {
+	t.NewCommand('e', "edit", func(row int) {
 		dn := dnList[row-1]
 		cmd := exec.Command("ldapvi", "-s", "base", "-b", dn)
 		cmd.Stdout = os.Stdout
@@ -128,7 +110,7 @@ func main() {
 		}
 		var columns []string
 		var data [][]string
-		dnList, columns, data = ldapSearch(LdapDN, LdapFilter, LdapAttrs)
+		dnList, columns, data = ldapSearch(LdapDN, LdapFilter, LdapAttrs, *flagSort)
 		t.FillTable(columns, data)
 	})
 	t.Run()

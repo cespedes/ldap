@@ -2,12 +2,13 @@ package main
 
 import (
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/go-ldap/ldap"
 )
 
-func ldapSearch(baseDN string, filter string, reqAttributes []string) (dnList []string, attributes []string, table [][]string) {
+func ldapSearch(baseDN string, filter string, reqAttributes []string, orderBy string) (dnList []string, attributes []string, table [][]string) {
 	l, err := ldap.DialURL(LdapServer)
 	if err != nil {
 		log.Fatal(err)
@@ -42,7 +43,16 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (dnList []
 		attributes = append(attributes, a)
 	}
 
-	var result [][]string
+	if orderBy != "" {
+		for _, name := range attributes {
+			if orderBy == name || orderBy == ReverseAlias[name] {
+				sort.Slice(sr.Entries, func(a, b int) bool {
+					return sr.Entries[a].GetAttributeValue(name) < sr.Entries[b].GetAttributeValue(name)
+				})
+				break
+			}
+		}
+	}
 
 	for _, entry := range sr.Entries {
 		dnList = append(dnList, entry.DN)
@@ -50,7 +60,7 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (dnList []
 		for _, attr := range attributes {
 			line = append(line, strings.Join(entry.GetAttributeValues(attr), " & "))
 		}
-		result = append(result, line)
+		table = append(table, line)
 	}
 	for i, a := range attributes {
 		if ReverseAlias[a] != "" {
@@ -58,5 +68,5 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string) (dnList []
 		}
 	}
 
-	return dnList, attributes, result
+	return dnList, attributes, table
 }
