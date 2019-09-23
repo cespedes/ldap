@@ -1,7 +1,8 @@
 module github.com/cespedes/ldap
 
 require (
-	github.com/cespedes/tableview v0.0.0-20190922172315-46bd731d65a8
+	github.com/cespedes/tableview v0.0.0-20190923095549-a54b03a94bb1
+	github.com/gdamore/tcell v1.3.0 // indirect
 	github.com/glacjay/goini v0.0.0-20161120062552-fd3024d87ee2
 	github.com/go-ldap/ldap v3.0.3+incompatible
 	github.com/rivo/uniseg v0.1.0 // indirect
