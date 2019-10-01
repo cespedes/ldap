@@ -1,14 +1,11 @@
 module github.com/cespedes/ldap
 
 require (
-	github.com/cespedes/tableview v0.0.0-20190923095549-a54b03a94bb1
-	github.com/gdamore/tcell v1.3.0 // indirect
+	github.com/cespedes/tableview v0.0.0-20190929081916-5223a23ac1ab
 	github.com/glacjay/goini v0.0.0-20161120062552-fd3024d87ee2
 	github.com/go-ldap/ldap v3.0.3+incompatible
-	github.com/rivo/uniseg v0.1.0 // indirect
-	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69 // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/sys v0.0.0-20190927073244-c990c680b611 // indirect
 	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
 )
 
-replace github.com/rivo/tview => github.com/cespedes/tview v0.0.0-20190912222215-e6745533fb9c
+go 1.13
