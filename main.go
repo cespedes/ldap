@@ -77,19 +77,6 @@ func main() {
 
 	dnList, attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs, *flagSort)
 
-	/*
-		if *flagSort != "" {
-			for i, name := range attrs {
-				if name == *flagSort {
-					sort.Slice(result, func(a, b int) bool { return result[a][i] < result[b][i] })
-					goto sortDone
-				}
-			}
-			log.Fatal("Cannot sort by " + *flagSort + " (unknown attribute)")
-		sortDone:
-		}
-	*/
-
 	if *flagOrg {
 		writeOrgtable(os.Stdout, attrs, result)
 		return
@@ -98,7 +85,7 @@ func main() {
 	t := tableview.NewTableView()
 	t.FillTable(attrs, result)
 	t.NewCommand('e', "edit", func(row int) {
-		dn := dnList[row-1]
+		dn := dnList[row]
 		cmd := exec.Command("ldapvi", "-s", "base", "-b", dn)
 		cmd.Stdout = os.Stdout
 		cmd.Stdin = os.Stdin
