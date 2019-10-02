@@ -100,5 +100,21 @@ func main() {
 		dnList, columns, data = ldapSearch(LdapDN, LdapFilter, LdapAttrs, *flagSort)
 		t.FillTable(columns, data)
 	})
+	t.NewCommand('E', "Edit", func(row int) {
+		dn := dnList[row]
+		cmd := exec.Command("ldapvi", "-m", "-s", "base", "-b", dn)
+		cmd.Stdout = os.Stdout
+		cmd.Stdin = os.Stdin
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			log.Printf("ldapvi: " + err.Error())
+			time.Sleep(5 * time.Second)
+		}
+		var columns []string
+		var data [][]string
+		dnList, columns, data = ldapSearch(LdapDN, LdapFilter, LdapAttrs, *flagSort)
+		t.FillTable(columns, data)
+	})
 	t.Run()
 }
