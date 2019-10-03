@@ -31,51 +31,29 @@ var (
 	flagDN   = flag.String("b", "", "Use this Base DN")
 )
 
-var (
-	// LdapServer is the URL of the LDAP server to connect to
-	LdapServer string
-
-	// LdapDN is the Base DN in the LDAP query
-	LdapDN string
-
-	// LdapFilter is used to restrict the LDAP query
-	LdapFilter string = "(cn=*)"
-
-	// LdapAttrs is a list of attributes to ask in the LDAP query
-	LdapAttrs []string = []string{"*", "createTimestamp", "modifyTimestamp", "structuralObjectClass"}
-
-	// AttributesOrder is a list of possible attributes to display
-	AttributesOrder []string
-
-	// UserFilters is a definition of some filters using a short name
-	UserFilters = make(map[string]string)
-
-	// Alias is a map of friendly names to LDAP attributes
-	Alias = make(map[string]string)
-
-	// ReverseAlias is a map of LDAP attributes to friendly names
-	ReverseAlias = make(map[string]string)
-)
-
 func main() {
 	var attrs []string
+
+	var c Config
 
 	flag.Parse()
 
 	if len(flag.Args()) >= 1 {
-		LdapFilter = flag.Args()[0]
+		c = config(flag.Args()[0])
+	} else {
+		c = config("")
 	}
 	if len(flag.Args()) > 1 {
-		LdapAttrs = flag.Args()[1:]
-	}
-	if UserFilters[LdapFilter] != "" {
-		LdapFilter = UserFilters[LdapFilter]
+		c.LdapAttrs = flag.Args()[1:]
 	}
 	if *flagDN != "" {
-		LdapDN = *flagDN
+		c.LdapDN = *flagDN
 	}
 
-	dnList, attrs, result := ldapSearch(LdapDN, LdapFilter, LdapAttrs, *flagSort)
+	if *flagSort != "" {
+		c.OrderBy = *flagSort
+	}
+	dnList, attrs, result := ldapSearch(c)
 
 	if *flagOrg {
 		writeOrgtable(os.Stdout, attrs, result)
@@ -97,7 +75,7 @@ func main() {
 		}
 		var columns []string
 		var data [][]string
-		dnList, columns, data = ldapSearch(LdapDN, LdapFilter, LdapAttrs, *flagSort)
+		dnList, columns, data = ldapSearch(c)
 		t.FillTable(columns, data)
 	})
 	t.NewCommand('E', "Edit", func(row int) {
@@ -113,7 +91,7 @@ func main() {
 		}
 		var columns []string
 		var data [][]string
-		dnList, columns, data = ldapSearch(LdapDN, LdapFilter, LdapAttrs, *flagSort)
+		dnList, columns, data = ldapSearch(c)
 		t.FillTable(columns, data)
 	})
 	t.Run()

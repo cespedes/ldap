@@ -8,18 +8,18 @@ import (
 	"github.com/go-ldap/ldap"
 )
 
-func ldapSearch(baseDN string, filter string, reqAttributes []string, orderBy string) (dnList []string, attributes []string, table [][]string) {
-	l, err := ldap.DialURL(LdapServer)
+func ldapSearch(c Config) (dnList []string, attributes []string, table [][]string) {
+	l, err := ldap.DialURL(c.LdapServer)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer l.Close()
 
 	searchRequest := ldap.NewSearchRequest(
-		baseDN, // The base dn to search
+		c.LdapDN, // The base dn to search
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		filter,        // The filter to apply
-		reqAttributes, // A list attributes to retrieve
+		c.LdapFilter, // The filter to apply
+		c.LdapAttrs,  // A list attributes to retrieve
 		nil,
 	)
 
@@ -33,7 +33,7 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string, orderBy st
 			mapAttrs[attr.Name] = true
 		}
 	}
-	for _, a := range AttributesOrder {
+	for _, a := range c.AttributesOrder {
 		if mapAttrs[a] {
 			attributes = append(attributes, a)
 			delete(mapAttrs, a)
@@ -43,9 +43,9 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string, orderBy st
 		attributes = append(attributes, a)
 	}
 
-	if orderBy != "" {
+	if c.OrderBy != "" {
 		for _, name := range attributes {
-			if orderBy == name || orderBy == ReverseAlias[name] {
+			if c.OrderBy == name || c.OrderBy == c.ReverseAlias[name] {
 				sort.Slice(sr.Entries, func(a, b int) bool {
 					return sr.Entries[a].GetAttributeValue(name) < sr.Entries[b].GetAttributeValue(name)
 				})
@@ -63,8 +63,8 @@ func ldapSearch(baseDN string, filter string, reqAttributes []string, orderBy st
 		table = append(table, line)
 	}
 	for i, a := range attributes {
-		if ReverseAlias[a] != "" {
-			attributes[i] = ReverseAlias[a]
+		if c.ReverseAlias[a] != "" {
+			attributes[i] = c.ReverseAlias[a]
 		}
 	}
 
