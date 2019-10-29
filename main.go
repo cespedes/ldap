@@ -29,6 +29,7 @@ var (
 	flagOrg  = flag.Bool("o", false, "Use org-tables instead of tview")
 	flagSort = flag.String("s", "", "Sort by that attribute")
 	flagDN   = flag.String("b", "", "Use this Base DN")
+	flagSSH  = flag.String("ssh", "", "ssh server to connect as a proxy")
 )
 
 func main() {

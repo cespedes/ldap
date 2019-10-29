@@ -1,18 +1,90 @@
 package main
 
 import (
+	"crypto/tls"
+	"fmt"
 	"log"
+	"net"
+	"net/url"
+	"os/exec"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/go-ldap/ldap"
 )
 
-func ldapSearch(c Config) (dnList []string, attributes []string, table [][]string) {
-	l, err := ldap.DialURL(c.LdapServer)
+func freePort() string {
+	ln, err := net.Listen("tcp", ":0")
 	if err != nil {
-		log.Fatal(err)
+		panic("freePort: binding to new port: " + err.Error())
 	}
+	defer ln.Close()
+
+	addr := ln.Addr()
+	tcp := addr.(*net.TCPAddr)
+
+	return strconv.Itoa(tcp.Port)
+}
+
+func ldapDial(c Config) *ldap.Conn {
+	if *flagSSH == "" {
+		l, err := ldap.DialURL(c.LdapServer)
+		if err != nil {
+			log.Fatal("ldap.Dial: " + err.Error())
+		}
+		return l
+	}
+	url, err := url.Parse(c.LdapServer)
+	if err != nil {
+		log.Fatal("Unable to parse " + c.LdapServer + ": " + err.Error())
+	}
+	host := url.Hostname()
+	remotePort := url.Port()
+	if remotePort == "" {
+		switch url.Scheme {
+		case "ldap":
+			remotePort = "389"
+		case "ldaps":
+			remotePort = "636"
+		default:
+			log.Fatal("Unknown scheme \"" + url.Scheme + "\"")
+		}
+	}
+	localPort := freePort()
+
+	cmd := exec.Command(
+		"ssh", "-f",
+		"-L", fmt.Sprintf("%s:%s:%s", localPort, host, remotePort),
+		*flagSSH, "sleep", "60")
+	err = cmd.Run()
+	if err != nil {
+		log.Fatal("Connecting to ssh proxy: " + err.Error())
+	}
+	if url.Scheme == "ldap" {
+		l, err := ldap.Dial("tcp", net.JoinHostPort("localhost", localPort))
+		if err != nil {
+			log.Fatal("ldap.Dial: " + err.Error())
+		}
+		return l
+	}
+	if url.Scheme == "ldaps" {
+		l, err := ldap.DialTLS("tcp",
+			net.JoinHostPort("localhost", localPort),
+			&tls.Config{
+				ServerName: host,
+			})
+		if err != nil {
+			log.Fatal("ldap.Dial: " + err.Error())
+		}
+		return l
+	}
+	log.Fatal("Unknown scheme \"" + url.Scheme + "\"")
+	return nil
+}
+
+func ldapSearch(c Config) (dnList []string, attributes []string, table [][]string) {
+	l := ldapDial(c)
 	defer l.Close()
 
 	searchRequest := ldap.NewSearchRequest(
@@ -25,7 +97,7 @@ func ldapSearch(c Config) (dnList []string, attributes []string, table [][]strin
 
 	sr, err := l.Search(searchRequest)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("ldapSearch: Search: " + err.Error())
 	}
 	mapAttrs := make(map[string]bool)
 	for _, entry := range sr.Entries {
