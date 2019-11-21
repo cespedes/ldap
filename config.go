@@ -83,7 +83,11 @@ func config(name string) (c Config) {
 	if name == "" {
 		c.LdapFilter = configGet(name, "filter", defaultLdapFilter)
 	} else {
-		c.LdapFilter = configGet(name, "filter", name)
+		if s := userConf[name]["filter"]; s != "" {
+			c.LdapFilter = s
+		} else {
+			c.LdapFilter = name
+		}
 	}
 	c.LdapAttrs = strings.Split(configGet(name, "attributes", defaultLdapAttrs), " ")
 	c.AttributesOrder = strings.Split(configGet(name, "order", ""), " ")
